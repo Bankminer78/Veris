@@ -1,23 +1,32 @@
-// content.js (Updated with a resilient retry mechanism)
+// content.js (Final version using DOM scraping)
 
 console.log("✅ Overleaf Lean Verifier: Content Script Loaded!");
 
 /**
- * Gets the LaTeX code from the active CodeMirror editor instance.
- * @returns {string|null} The LaTeX code or null if the editor isn't found.
+ * Gets the LaTeX code by directly reading the text from the rendered
+ * CodeMirror 6 HTML elements. This is a DOM scraping approach.
+ * @returns {string|null} The LaTeX code or null if editor lines aren't found.
  */
-function getLatexCode() {
-  const editor = document.querySelector(".cm-editor");
-  if (editor && editor.cmView) {
-    return editor.cmView.view.state.doc.toString();
+function getLatexCodeFromDOM() {
+  // CodeMirror 6 renders each line of the editor in a div with the class "cm-line".
+  // We select all of them.
+  const lineElements = document.querySelectorAll(".cm-editor .cm-line");
+
+  if (lineElements.length === 0) {
+    // This check is still useful in case the editor hasn't loaded yet.
+    return null;
   }
-  return null;
+
+  // We create an array from the line elements, get the text content of each one,
+  // and then join them together with a newline character.
+  const lines = Array.from(lineElements).map((line) => line.textContent);
+  return lines.join("\n");
 }
 
 /**
  * Displays a feedback notification at the bottom-right of the page.
  * @param {string} message - The message to display.
- * @param {string} type - The type of message ('success', 'suggestion', 'error', or 'info').
+ * @param {string} type - The type of message ('success', 'suggestion', or 'error').
  */
 function displayFeedback(message, type) {
   let feedbackBox = document.getElementById("lean-verifier-feedback");
@@ -42,17 +51,15 @@ function displayFeedback(message, type) {
   feedbackBox.style.boxShadow = "0 4px 8px rgba(0,0,0,0.2)";
   feedbackBox.style.maxWidth = "300px";
 
-  // Set colors based on type
   const colors = {
     success: "#28a745",
     suggestion: "#ffc107",
     error: "#dc3545",
-    info: "#17a2b8", // A blue for informational messages
+    info: "#17a2b8",
   };
   feedbackBox.style.backgroundColor = colors[type] || colors.info;
   feedbackBox.style.color = type === "suggestion" ? "black" : "white";
 
-  // Automatically hide after 7 seconds, unless it's an error
   const hideDelay = type === "error" ? 10000 : 7000;
   setTimeout(() => {
     if (feedbackBox) feedbackBox.style.display = "none";
@@ -61,49 +68,47 @@ function displayFeedback(message, type) {
 
 /**
  * The core function that gets the code and sends it to the background script.
- * This now includes a retry mechanism.
+ * Includes a retry mechanism to wait for the editor to be rendered.
  */
 function triggerVerification() {
-  console.log("Verification triggered. Looking for editor...");
+  console.log("Verification triggered. Looking for editor lines in the DOM...");
 
   let attempts = 0;
-  const maxAttempts = 10; // Try 10 times over 5 seconds
-  const interval = 500; // Try every 500ms
+  const maxAttempts = 10;
+  const interval = 500;
 
   const tryToVerify = setInterval(() => {
     attempts++;
-    const latexCode = getLatexCode();
+    // We now call our new DOM scraping function.
+    const latexCode = getLatexCodeFromDOM();
 
     if (latexCode) {
-      // SUCCESS: Editor found!
-      clearInterval(tryToVerify); // Stop trying
+      clearInterval(tryToVerify);
       console.log(
-        `Editor found on attempt ${attempts}. Sending LaTeX to background script.`
+        `Editor lines found on attempt ${latexCode}. Sending LaTeX to background script.`
       );
+      console.log("latex code: ", latexCode);
       chrome.runtime.sendMessage({
         action: "verifyLatex",
         code: latexCode,
       });
     } else if (attempts >= maxAttempts) {
-      // FAILURE: Waited too long, editor never appeared.
-      clearInterval(tryToVerify); // Stop trying
+      clearInterval(tryToVerify);
       console.error(
-        "Lean Verifier: Could not find Overleaf's CodeMirror editor after multiple attempts."
+        "Lean Verifier: Could not find editor lines (.cm-line) after multiple attempts."
       );
       displayFeedback(
         "Error: Could not find the Overleaf editor. Please try reloading the page.",
         "error"
       );
     } else {
-      // RETRYING: Editor not found yet, will try again.
-      console.log(`Editor not found on attempt ${attempts}. Retrying...`);
+      console.log(`Editor lines not found on attempt ${attempts}. Retrying...`);
     }
   }, interval);
 }
 
 // --- TRIGGERS ---
 
-// TRIGGER 1: Listening for the Recompile Button Click
 document.addEventListener("click", (event) => {
   const button = event.target.closest("button");
   if (button && button.textContent.trim() === "Recompile") {
@@ -112,7 +117,6 @@ document.addEventListener("click", (event) => {
   }
 });
 
-// TRIGGER 2: Listening for the Keyboard Shortcut (Ctrl+Enter or Cmd+Enter)
 document.addEventListener("keydown", (event) => {
   if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
     console.log("Ctrl/Cmd + Enter shortcut detected!");
@@ -122,7 +126,7 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
-// --- LISTENER: For receiving feedback from the background script ---
+// --- LISTENER ---
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "displayFeedback") {
     displayFeedback(request.message, request.type);
