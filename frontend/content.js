@@ -26,7 +26,7 @@ function getLatexCodeFromDOM() {
 /**
  * Displays a feedback notification at the bottom-right of the page.
  * @param {string} message - The message to display.
- * @param {string} type - The type of message ('success', 'suggestion', or 'error').
+ * @param {string} type - The type of message ('success', 'suggestion', 'error', or 'verifying').
  */
 function displayFeedback(message, type) {
   let feedbackBox = document.getElementById("lean-verifier-feedback");
@@ -56,14 +56,18 @@ function displayFeedback(message, type) {
     suggestion: "#ffc107",
     error: "#dc3545",
     info: "#17a2b8",
+    verifying: "#ffc107", // Yellow for "verifying"
   };
   feedbackBox.style.backgroundColor = colors[type] || colors.info;
-  feedbackBox.style.color = type === "suggestion" ? "black" : "white";
+  feedbackBox.style.color = type === "suggestion" || type === "verifying" ? "black" : "white";
 
-  const hideDelay = type === "error" ? 10000 : 7000;
-  setTimeout(() => {
-    if (feedbackBox) feedbackBox.style.display = "none";
-  }, hideDelay);
+  // Do not hide the box if it's in the "verifying" state
+  if (type !== "verifying") {
+    const hideDelay = type === "error" ? 10000 : 7000;
+    setTimeout(() => {
+      if (feedbackBox) feedbackBox.style.display = "none";
+    }, hideDelay);
+  }
 }
 
 /**

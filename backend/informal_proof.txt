@@ -1,0 +1,38 @@
+\begin{document}
+
+\begin{theorem}
+The square root of 2 is irrational.
+\end{theorem}
+
+\begin{proof}
+We will prove this by contradiction.
+
+Assume that $\sqrt{2}$ is a rational number. By definition, this means we can write $\sqrt{2} = \frac{a}{b}$ where $a$ and $b$ are integers, $b \neq 0$. Furthermore, we can assume that the fraction $\frac{a}{b}$ is in its simplest form, meaning that $a$ and $b$ have no common factors other than 1.
+
+From the equation $\sqrt{2} = \frac{a}{b}$, we can square both sides:
+\[ 2 = \left(\frac{a}{b}\right)^2 = \frac{a^2}{b^2} \]
+
+Multiplying both sides by $b^2$ gives us:
+\[ a^2 = 2b^2 \]
+
+This equation shows that $a^2$ is an even number, since it is a multiple of 2. A key property of integers is that if the square of a number is even, the number itself must also be even. (If $a$ were odd, $a^2$ would also be odd). Therefore, $a$ must be an even integer.
+
+Since $a$ is even, it can be expressed as $a = 2k$ for some integer $k$.
+
+Now, we substitute this expression for $a$ back into our equation $a^2 = 2b^2$:
+\[ (2k)^2 = 2b^2 \]
+\[ 4k^2 = 2b^2 \]
+
+Divide both sides by 2:
+\[ 2k^2 = b^2 \]
+
+This final equation shows that $b^2$ must be an even number, which in turn means that the integer $b$ must also be even.
+
+So, we have concluded that $a$ is even and $b$ is even. This means they share a common factor of 2.
+
+This conclusion contradicts our initial assumption that the fraction $\frac{a}{b}$ was in its simplest form (i.e., that $a$ and $b$ have no common factors). Since our initial assumption leads to a logical contradiction, the assumption must be false.
+
+Therefore, $\sqrt{2}$ cannot be a rational number, and so it must be irrational.
+
+\end{proof}
+\end{document}
