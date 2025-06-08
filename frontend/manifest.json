@@ -1,0 +1,20 @@
+{
+  "manifest_version": 3,
+  "name": "Veris Overleaf Lean Verifier",
+  "version": "1.0",
+  "description": "Verifies LaTeX math using a Lean proof backend.",
+  "permissions": ["activeTab", "scripting", "storage", "webRequest"],
+  "host_permissions": ["https://*.overleaf.com/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://*.overleaf.com/*"],
+      "js": ["content.js"]
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  }
+}
